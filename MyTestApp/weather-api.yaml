@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-api-deployment
+  labels:
+    app: weather-api
+spec:
+  replicas: 3 # 3 adet yedekli kopya (High Availability)
+  selector:
+    matchLabels:
+      app: weather-api
+  template:
+    metadata:
+      labels:
+        app: weather-api
+    spec:
+      containers:
+      - name: weather-api-container
+        image: docker6464/weather-api:v1.0.1 # Senin Docker Hub imajın
+        env: # <--- BURAYI EKLE (Uygulamaya 8080'i dinle diyoruz)
+          - name: ASPNETCORE_URLS
+            value: "http://+:8080"
+        ports:
+        - containerPort: 8080 # Uygulamanın içeride çalıştığı port
+        
+        # RESOURCE LIMITS: Mülakatta "Pod'un tüm sunucuyu sömürmesini nasıl engellersin?" sorusunun cevabı.
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+
+        # LIVENESS PROBE: Uygulama donarsa K8s bunu fark edip restart atar.
+        livenessProbe:
+          httpGet:
+            path: /weatherforecast
+            port: 8080
+          initialDelaySeconds: 15 # Uygulama ayağa kalkana kadar bekle
+          periodSeconds: 20
+
+        # READINESS PROBE: Uygulama hazır değilse trafik gönderme.
+        readinessProbe:
+          httpGet:
+            path: /weatherforecast
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-api-service
+spec:
+  type: LoadBalancer # Dış dünyadan erişim için
+  selector:
+    app: weather-api
+  ports:
+    - protocol: TCP
+      port: 80       # Dışarıdan gelen port
+      targetPort: 8080 # Pod'un içindeki port
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: weather-api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: weather.local  # Bu bizim hayali domainimiz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: weather-api-service # Senin servisinin adı
+            port:
+              number: 80
