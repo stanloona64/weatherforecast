@@ -1,0 +1,26 @@
+name: Hava Durumu API CI-CD # Workflow ismi
+
+on:
+  push:
+    branches: [ "main" ] # Sadece main branch'ine push gelince çalış
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodu Klonla
+        uses: actions/checkout@v3
+
+      - name: Docker Hub'a Giriş Yap
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker İmajını Build Et ve Pushla
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          # Her seferinde farklı bir tag (commit ID) ile gönderiyoruz
+          tags: docker6464/weather-api:${{ github.sha }}, docker6464/weather-api:latest
