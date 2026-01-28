@@ -20,7 +20,7 @@ jobs:
       - name: Docker İmajını Build Et ve Pushla
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./MyTestApp
+          file: ./MyTestApp/Dockerfile
           push: true
-          # Her seferinde farklı bir tag (commit ID) ile gönderiyoruz
           tags: docker6464/weather-api:${{ github.sha }}, docker6464/weather-api:latest
