@@ -6,7 +6,7 @@ metadata:
   labels:
     app: weather-api
 spec:
-  replicas: 3 # 3 adet yedekli kopya (High Availability)
+  replicas: 5 # 3 adet yedekli kopya (High Availability) # argocd'de Reconciliation Loop'u tetiklemek için pod sayısını 3'ten 5'e çıkardık. 
   selector:
     matchLabels:
       app: weather-api
